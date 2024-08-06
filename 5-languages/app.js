@@ -1,6 +1,6 @@
 const lang = "ru";
 
-switch (lang) {
+switch (lang.toLowerCase()) {
   case "ru":
     console.log("Здравствуйте!");
     break;
