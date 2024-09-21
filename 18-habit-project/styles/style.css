@@ -133,7 +133,8 @@ h1 {
 
 .progress__cover-bar {
   position: absolute;
-  width: 50%;
+  transition: all 0.5s;
+  /* width: 50%; */
   height: 5px;
   background: #5051f9;
   border-radius: 4px;
@@ -196,6 +197,10 @@ input {
   line-height: 15.61px;
   color: #8899a8;
   flex: 1;
+}
+
+input.error {
+  border: 1px solid red;
 }
 
 .habit__form {
