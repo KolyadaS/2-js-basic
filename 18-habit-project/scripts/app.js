@@ -16,6 +16,10 @@ const page = {
     daysContainer: document.getElementById("days"),
     nextDay: document.querySelector(".habit__day"),
   },
+  popup: {
+    index: document.getElementById("add-habit-popup"),
+    iconField: document.querySelector('.popup__form input[name="icon"]'),
+  },
 };
 
 // utils
@@ -30,6 +34,44 @@ function loadData() {
 
 function saveData() {
   localStorage.setItem(HABIT_KEY, JSON.stringify(habits));
+}
+
+function togglePopup() {
+  if (page.popup.index.classList.contains("cover_hidden")) {
+    page.popup.index.classList.remove("cover_hidden");
+  } else {
+    page.popup.index.classList.add("cover_hidden");
+  }
+}
+
+function resetForm(form, fields) {
+  for (const field of fields) {
+    form[field].value = "";
+  }
+}
+
+function validateAndGetFormData(form, fields) {
+  const formData = new FormData(form);
+  const res = {};
+  for (const field of fields) {
+    const fieldValue = formData.get(field);
+    form[field].classList.remove("error");
+    if (!fieldValue) {
+      form[field].classList.add("error");
+    }
+    res[field] = fieldValue;
+  }
+  let isValid = true;
+  for (const field of fields) {
+    if (!res[field]) {
+      isValid = false;
+    }
+  }
+  if (!isValid) {
+    return;
+  } else {
+    return res;
+  }
 }
 
 // render
@@ -91,34 +133,33 @@ function rerender(activeHabitId) {
   if (!activeHabit) {
     return;
   }
+  document.location.replace(document.location.pathname + "#" + activeHabitId);
   rerenderMenu(activeHabit);
   rerenderHead(activeHabit);
   rerenderContent(activeHabit);
 }
 
-// work with days
+// working with days
 function addDays(event) {
-  const form = event.target;
   event.preventDefault();
-  const data = new FormData(form);
-  const comment = data.get("comment");
-  form["comment"].classList.remove("error");
-  if (!comment) {
-    form["comment"].classList.add("error");
+
+  const data = validateAndGetFormData(event.target, ["comment"]);
+  if (!data) {
     return;
   }
+
   habits = habits.map((habit) => {
     console.log(habits);
     console.log(globalActiveHabitId);
     if (habit.id === globalActiveHabitId) {
       return {
         ...habit,
-        days: habit.days.concat([{ comment }]),
+        days: habit.days.concat([{ comment: data.comment }]),
       };
     }
     return habit;
   });
-  form["comment"].value = "";
+  resetForm(event.target, ["comment"]);
   rerender(globalActiveHabitId);
   saveData();
 }
@@ -138,8 +179,50 @@ function deleteDay(index) {
   saveData();
 }
 
+// working with habits
+
+function setIcon(context, icon) {
+  page.popup.iconField.value = icon;
+  const activeIcon = document.querySelector(".icon.icon_active");
+  activeIcon.classList.remove("icon_active");
+  context.classList.add("icon_active");
+}
+
+function addHabit(event) {
+  event.preventDefault();
+  const data = validateAndGetFormData(event.target, ["name", "icon", "target"]);
+  if (!data) {
+    return;
+  }
+
+  const maxId = habits.reduce(
+    (acc, habit) => (acc > habit.id ? acc : habit.id),
+    0
+  );
+
+  habits.push({
+    id: maxId + 1,
+    name: data.name,
+    target: data.target,
+    icon: data.icon,
+    days: [],
+  });
+
+  resetForm(event.target, ["name", "target"]);
+  togglePopup();
+  saveData();
+  rerender(maxId + 1);
+}
+
 // init
 (() => {
   loadData();
-  rerender(habits[0].id);
+  const hashId = Number(document.location.hash.replace("#", ""));
+  console.log(hashId);
+  const urlHabit = habits.find((habit) => habit.id == hashId);
+  if (urlHabit) {
+    rerender(urlHabit.id);
+  } else {
+    rerender(habits[0].id);
+  }
 })();
